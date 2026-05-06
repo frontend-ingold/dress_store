@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 
 const apiBaseUrl =
-  import.meta.env.VITE_API_URL?.replace(/\/$/, "") || "http://localhost:5000/api";
+  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
+  (window.location.hostname === "localhost"
+    ? "http://localhost:5000/api"
+    : "https://dress-store-seey.vercel.app/api");
 
 const currency = new Intl.NumberFormat("en-IN", {
   style: "currency",
