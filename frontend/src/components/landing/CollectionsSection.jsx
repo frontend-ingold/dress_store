@@ -1,19 +1,19 @@
-function CollectionsSection({ collectionPreview }) {
-  return (
-    <section className="collections-section" id="collections">
-      <div className="section-heading">
-        <p className="eyebrow">Collection preview</p>
-        <h2>Three visual directions to anchor the store.</h2>
-      </div>
+import SectionHeader from "./SectionHeader";
 
-      <div className="collection-grid">
-        {collectionPreview.map((item) => (
-          <article key={item.title} className="collection-card">
-            <img src={item.image} alt={item.title} />
-            <div className="collection-card-copy">
-              <p className="collection-index">{item.title}</p>
-              <h3>{item.title}</h3>
-              <p>{item.copy}</p>
+function CollectionsSection({ featuredCollections }) {
+  return (
+    <section className="featured" id="collections">
+      <SectionHeader subtitle="Explore by Style" title="Featured Collections" />
+
+      <div className="collections-grid">
+        {featuredCollections.map((item) => (
+          <article key={item.name} className="collection-card">
+            <div className="collection-image">
+              <img src={item.imageUrl} alt={item.name} />
+            </div>
+            <div className="collection-info">
+              <h3 className="collection-name">{item.name}</h3>
+              <p className="collection-count">{item.count}</p>
             </div>
           </article>
         ))}

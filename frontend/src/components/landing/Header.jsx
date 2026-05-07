@@ -1,21 +1,28 @@
-function Header() {
+function Header({ navigationLinks }) {
   return (
-    <header className="site-header">
-      <a href="#" className="brand">
-        <span className="brand-mark">D</span>
-        <span className="brand-copy">
-          <strong>Dressify</strong>
-          <span>Elevated occasionwear</span>
-        </span>
-      </a>
+    <nav className="site-nav-shell">
+      <div className="logo">ATELIER</div>
 
-      <nav className="site-nav">
-        <a href="#collections">Collections</a>
-        <a href="#story">Story</a>
-        <a href="#promise">Why us</a>
-        <a href="#cta">Shop soon</a>
-      </nav>
-    </header>
+      <ul className="nav-links">
+        {navigationLinks.map((item) => (
+          <li key={item.label}>
+            <a href={item.href}>{item.label}</a>
+          </li>
+        ))}
+      </ul>
+
+      <div className="nav-icons" aria-label="Utility links">
+        <button type="button" aria-label="Search">
+          Search
+        </button>
+        <button type="button" aria-label="Account">
+          Account
+        </button>
+        <button type="button" aria-label="Cart">
+          Cart
+        </button>
+      </div>
+    </nav>
   );
 }
 
