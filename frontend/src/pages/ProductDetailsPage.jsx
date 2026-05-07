@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import AuthModal from "../components/landing/AuthModal";
 import Header from "../components/landing/Header";
+import Toast from "../components/landing/Toast";
 import Footer from "../components/landing/Footer";
 import { footerSections } from "../data/landingContent";
 import useCart from "../hooks/useCart";
 import useProducts from "../hooks/useProducts";
+import useShopSession from "../hooks/useShopSession";
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -45,12 +48,19 @@ function getProductPathParamFromHash() {
 function ProductDetailsPage() {
   const { products, isLoading, error } = useProducts();
   const { addItem, itemCount } = useCart();
+  const { isAuthenticated, continueAsGuest, login, register, forgotPassword, resetPassword } =
+    useShopSession();
   const productPathParam = getProductPathParamFromHash();
   const [quantity, setQuantity] = useState(1);
   const [cartFeedback, setCartFeedback] = useState("");
   const [cartError, setCartError] = useState("");
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isBuyingNow, setIsBuyingNow] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState("login");
+  const [authError, setAuthError] = useState("");
+  const [authInfo, setAuthInfo] = useState("");
+  const [pendingAction, setPendingAction] = useState(null);
 
   const product = useMemo(
     () =>
@@ -80,6 +90,30 @@ function ProductDetailsPage() {
     setCartFeedback("");
     setCartError("");
   }, [product?.id]);
+
+  useEffect(() => {
+    if (!cartFeedback) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setCartFeedback("");
+    }, 2600);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [cartFeedback]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !pendingAction) {
+      return;
+    }
+
+    setIsAuthModalOpen(false);
+    setAuthError("");
+    const nextAction = pendingAction;
+    setPendingAction(null);
+    handleAddToCart(nextAction === "buy");
+  }, [isAuthenticated, pendingAction]);
 
   async function handleAddToCart(redirectToCart = false) {
     if (!product) {
@@ -112,14 +146,78 @@ function ProductDetailsPage() {
     }
   }
 
+  function requestProtectedAction(action) {
+    if (isAuthenticated) {
+      handleAddToCart(action === "buy");
+      return;
+    }
+
+    setAuthError("");
+    setAuthInfo("");
+    setAuthMode("login");
+    setPendingAction(action);
+    setIsAuthModalOpen(true);
+  }
+
+  function handleGuestContinue() {
+    setAuthError("");
+    setAuthInfo("");
+    continueAsGuest();
+  }
+
+  async function handleLogin(credentials) {
+    try {
+      setAuthError("");
+      setAuthInfo("");
+      await login(credentials);
+    } catch (requestError) {
+      setAuthError(requestError.message);
+    }
+  }
+
+  async function handleRegister(payload) {
+    try {
+      setAuthError("");
+      setAuthInfo("");
+      await register(payload);
+    } catch (requestError) {
+      setAuthError(requestError.message);
+    }
+  }
+
+  async function handleForgotPassword(payload) {
+    try {
+      setAuthError("");
+      const result = await forgotPassword(payload);
+      setAuthInfo(
+        result.resetToken
+          ? `Reset token: ${result.resetToken}. Use it below to set a new password.`
+          : result.message
+      );
+      setAuthMode("reset");
+    } catch (requestError) {
+      setAuthError(requestError.message);
+    }
+  }
+
+  async function handleResetPassword(payload) {
+    try {
+      setAuthError("");
+      setAuthInfo("");
+      await resetPassword(payload);
+    } catch (requestError) {
+      setAuthError(requestError.message);
+    }
+  }
+
   return (
     <>
       <Header navigationLinks={productPageLinks} cartCount={itemCount} />
+      <Toast message={cartFeedback} />
 
       <main className="product-detail-page">
         {error ? <p className="catalog-status error">{error}</p> : null}
         {cartError ? <p className="catalog-status error">{cartError}</p> : null}
-        {cartFeedback ? <p className="catalog-status">{cartFeedback}</p> : null}
         {isLoading ? <p className="catalog-status">Loading product...</p> : null}
 
         {!isLoading && !error && !product ? (
@@ -213,7 +311,7 @@ function ProductDetailsPage() {
                   <button
                     type="button"
                     className="catalog-banner-link primary"
-                    onClick={() => handleAddToCart(false)}
+                    onClick={() => requestProtectedAction("cart")}
                     disabled={isAddingToCart || product.stock < 1}
                   >
                     {isAddingToCart ? "Adding..." : "Add to cart"}
@@ -221,7 +319,7 @@ function ProductDetailsPage() {
                   <button
                     type="button"
                     className="catalog-banner-link secondary"
-                    onClick={() => handleAddToCart(true)}
+                    onClick={() => requestProtectedAction("buy")}
                     disabled={isBuyingNow || product.stock < 1}
                   >
                     {isBuyingNow ? "Processing..." : "Buy now"}
@@ -286,6 +384,26 @@ function ProductDetailsPage() {
           </>
         ) : null}
       </main>
+
+      {isAuthModalOpen ? (
+        <AuthModal
+          mode={authMode}
+          onModeChange={setAuthMode}
+          onClose={() => {
+            setIsAuthModalOpen(false);
+            setPendingAction(null);
+            setAuthError("");
+            setAuthInfo("");
+          }}
+          onGuest={handleGuestContinue}
+          onLogin={handleLogin}
+          onRegister={handleRegister}
+          onForgotPassword={handleForgotPassword}
+          onResetPassword={handleResetPassword}
+          errorMessage={authError}
+          infoMessage={authInfo}
+        />
+      ) : null}
 
       <Footer footerSections={footerSections} />
     </>
