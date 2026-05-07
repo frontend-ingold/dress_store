@@ -29,7 +29,7 @@ export async function createOrder(request, response, next) {
       const placeholders = productIds.map((_, index) => `$${index + 1}`).join(",");
 
       const productsResult = await client.query(
-        `SELECT id, name, price, stock
+        `SELECT id, name, price, special_price AS "specialPrice", stock
          FROM products
          WHERE id IN (${placeholders}) AND is_active = TRUE`,
         productIds
@@ -46,6 +46,7 @@ export async function createOrder(request, response, next) {
       for (const item of request.body.items) {
         const product = productMap.get(item.productId);
         const quantity = Number(item.quantity || 0);
+        const effectivePrice = Number(product?.specialPrice ?? product?.price ?? 0);
 
         if (!product || quantity < 1) {
           throw new Error("Invalid order quantity.");
@@ -55,7 +56,7 @@ export async function createOrder(request, response, next) {
           throw new Error(`${product.name} does not have enough stock.`);
         }
 
-        orderTotal += Number(product.price) * quantity;
+        orderTotal += effectivePrice * quantity;
       }
 
       const orderResult = await client.query(
@@ -77,11 +78,12 @@ export async function createOrder(request, response, next) {
       for (const item of request.body.items) {
         const product = productMap.get(item.productId);
         const quantity = Number(item.quantity);
+        const effectivePrice = Number(product.specialPrice ?? product.price);
 
         await client.query(
           `INSERT INTO order_items (order_id, product_id, quantity, unit_price)
            VALUES ($1, $2, $3, $4)`,
-          [orderResult.rows[0].id, item.productId, quantity, product.price]
+          [orderResult.rows[0].id, item.productId, quantity, effectivePrice]
         );
 
         await client.query(`UPDATE products SET stock = stock - $1 WHERE id = $2`, [

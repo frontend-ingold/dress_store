@@ -1,7 +1,9 @@
-function Header({ navigationLinks }) {
+function Header({ navigationLinks, cartCount = 0 }) {
   return (
     <nav className="site-nav-shell">
-      <div className="logo">ATELIER</div>
+      <a href="#/" className="logo">
+        ATELIER
+      </a>
 
       <ul className="nav-links">
         {navigationLinks.map((item) => (
@@ -18,9 +20,9 @@ function Header({ navigationLinks }) {
         <button type="button" aria-label="Account">
           Account
         </button>
-        <button type="button" aria-label="Cart">
-          Cart
-        </button>
+        <a href="#/cart" className="nav-cart-link" aria-label="Cart">
+          Cart{cartCount > 0 ? ` (${cartCount})` : ""}
+        </a>
       </div>
     </nav>
   );

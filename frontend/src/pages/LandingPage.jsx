@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Header from "../components/landing/Header";
 import HeroSection from "../components/landing/HeroSection";
 import CollectionsSection from "../components/landing/CollectionsSection";
@@ -6,7 +6,9 @@ import ArrivalsSection from "../components/landing/ArrivalsSection";
 import NewsletterSection from "../components/landing/NewsletterSection";
 import Footer from "../components/landing/Footer";
 import { footerSections, navigationLinks } from "../data/landingContent";
-import { apiBaseUrl } from "../config/api";
+import useCategories from "../hooks/useCategories";
+import useCart from "../hooks/useCart";
+import useProducts from "../hooks/useProducts";
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -15,36 +17,12 @@ const currency = new Intl.NumberFormat("en-US", {
 });
 
 function LandingPage() {
-  const [products, setProducts] = useState([]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    async function loadProducts() {
-      try {
-        const response = await fetch(`${apiBaseUrl}/products`, {
-          signal: controller.signal
-        });
-
-        if (!response.ok) {
-          throw new Error("Unable to load homepage products.");
-        }
-
-        const data = await response.json();
-        setProducts(data.products ?? []);
-      } catch (error) {
-        if (error.name !== "AbortError") {
-          console.error(error);
-        }
-      }
-    }
-
-    loadProducts();
-    return () => controller.abort();
-  }, []);
+  const { products } = useProducts();
+  const { categories } = useCategories();
+  const { itemCount } = useCart();
 
   const heroImage = products[0];
-  const categoryCount = new Set(products.map((product) => product.category)).size;
+  const categoryCount = categories.length || new Set(products.map((product) => product.category)).size;
 
   const heroContent = useMemo(() => {
     if (!heroImage) {
@@ -66,6 +44,14 @@ function LandingPage() {
   }, [categoryCount, heroImage]);
 
   const featuredCollections = useMemo(() => {
+    if (categories.length) {
+      return categories.map((item) => ({
+        name: item.category,
+        imageUrl: item.imageUrl,
+        count: `${item.productCount} Piece${Number(item.productCount) === 1 ? "" : "s"}`
+      }));
+    }
+
     const grouped = new Map();
 
     for (const product of products) {
@@ -85,21 +71,24 @@ function LandingPage() {
         ...item,
         count: `${item.pieces} Piece${item.pieces === 1 ? "" : "s"}`
       }))
-      .slice(0, 3);
-  }, [products]);
+      .sort((left, right) => left.name.localeCompare(right.name));
+  }, [categories, products]);
 
   const newArrivals = useMemo(
     () =>
       products.slice(0, 4).map((product) => ({
         ...product,
-        priceLabel: currency.format(Number(product.price))
+        priceLabel: currency.format(Number(product.price)),
+        specialPriceLabel: product.specialPrice
+          ? currency.format(Number(product.specialPrice))
+          : ""
       })),
     [products]
   );
 
   return (
     <>
-      <Header navigationLinks={navigationLinks} />
+      <Header navigationLinks={navigationLinks} cartCount={itemCount} />
 
       <main>
         <HeroSection

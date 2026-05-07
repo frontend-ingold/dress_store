@@ -7,8 +7,8 @@ function HeroSection({ heroImage, heroSubtitle, heroTitle, heroDescription }) {
         <p className="hero-description">{heroDescription}</p>
 
         <div className="cta-group">
-          <a href="#collections" className="btn btn-primary">
-            Explore Collection
+          <a href="#/products" className="btn btn-primary">
+            Shop All Dresses
           </a>
           <a href="#about" className="btn btn-secondary">
             Our Story

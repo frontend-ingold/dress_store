@@ -4,6 +4,7 @@ import morgan from "morgan";
 import dotenv from "dotenv";
 import productRoutes from "./routes/productRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
+import cartRoutes from "./routes/cartRoutes.js";
 
 dotenv.config();
 
@@ -37,6 +38,7 @@ app.get("/api/health", (_request, response) => {
 });
 
 app.use("/api", productRoutes);
+app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 
 app.use((error, _request, response, _next) => {
