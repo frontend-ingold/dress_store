@@ -89,6 +89,8 @@ function App() {
     () => cart.reduce((total, item) => total + item.price * item.quantity, 0),
     [cart]
   );
+  const featuredProducts = useMemo(() => products.slice(0, 3), [products]);
+  const heroProduct = featuredProducts[0];
 
   function addToCart(product) {
     setCart((currentCart) => {
@@ -201,23 +203,101 @@ function App() {
 
   return (
     <div className="page-shell">
-      <header className="hero">
-        <div>
-          <p className="eyebrow">Spring edit 2026</p>
-          <h1>Dressify boutique storefront</h1>
-          <p className="hero-copy">
-            A React storefront for occasion, casual, and evening dresses with a Node.js API and
-            PgSQL order flow.
-          </p>
+      <nav className="topbar">
+        <div className="brand-lockup">
+          <span className="brand-mark">D</span>
+          <div>
+            <strong>Dressify</strong>
+            <span>Modern occasionwear</span>
+          </div>
         </div>
-        <div className="hero-card">
-          <p>Cart total</p>
-          <strong>{currency.format(subtotal)}</strong>
-          <span>{cart.reduce((count, item) => count + item.quantity, 0)} items selected</span>
+        <div className="topbar-links">
+          <a href="#collection">Collection</a>
+          <a href="#checkout">Checkout</a>
+          <a href="#story">Story</a>
+        </div>
+      </nav>
+
+      <header className="hero">
+        <div className="hero-copy-block">
+          <p className="eyebrow">Spring edit 2026</p>
+          <h1>Dresses styled like a magazine cover, sold like a modern boutique.</h1>
+          <p className="hero-copy">
+            A polished landing page and storefront for occasion, casual, and evening silhouettes,
+            built to convert browsers into customers without losing editorial character.
+          </p>
+          <div className="hero-actions">
+            <a href="#collection" className="hero-button primary">
+              Shop the collection
+            </a>
+            <a href="#story" className="hero-button secondary">
+              Read the brand story
+            </a>
+          </div>
+          <div className="hero-stats">
+            <div>
+              <strong>48h</strong>
+              <span>Dispatch window</span>
+            </div>
+            <div>
+              <strong>4.9/5</strong>
+              <span>Client rating</span>
+            </div>
+            <div>
+              <strong>6</strong>
+              <span>Signature styles live</span>
+            </div>
+          </div>
+        </div>
+        <div className="hero-card hero-showcase">
+          {heroProduct ? (
+            <>
+              <div className="hero-showcase-image">
+                <img src={heroProduct.imageUrl} alt={heroProduct.name} />
+              </div>
+              <div className="hero-showcase-copy">
+                <p>Featured now</p>
+                <strong>{heroProduct.name}</strong>
+                <span>{heroProduct.category}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <p>Cart total</p>
+              <strong>{currency.format(subtotal)}</strong>
+              <span>{cart.reduce((count, item) => count + item.quantity, 0)} items selected</span>
+            </>
+          )}
         </div>
       </header>
 
-      <main className="content-grid">
+      <section className="feature-strip" id="story">
+        <article>
+          <p className="eyebrow">Occasion-first</p>
+          <h2>Designed for receptions, dinner dates, and late RSVP moments.</h2>
+        </article>
+        <article>
+          <p>
+            Clean drape, expressive color, and a boutique tone that feels curated instead of
+            generic.
+          </p>
+        </article>
+      </section>
+
+      <section className="featured-grid">
+        {featuredProducts.map((product) => (
+          <article key={product.id} className="featured-card">
+            <img src={product.imageUrl} alt={product.name} />
+            <div className="featured-card-copy">
+              <p className="product-category">{product.category}</p>
+              <h3>{product.name}</h3>
+              <strong>{currency.format(product.price)}</strong>
+            </div>
+          </article>
+        ))}
+      </section>
+
+      <main className="content-grid" id="collection">
         <section>
           <div className="section-header">
             <h2>Shop dresses</h2>
@@ -289,7 +369,7 @@ function App() {
             </div>
           </section>
 
-          <section className="checkout-panel">
+          <section className="checkout-panel" id="checkout">
             <div className="section-header">
               <h2>Checkout</h2>
             </div>
