@@ -264,6 +264,7 @@ function Header({ navigationLinks, cartCount = 0 }) {
                   onClick={() => {
                     clearSession();
                     setIsAccountMenuOpen(false);
+                    window.location.hash = "#/";
                   }}
                 >
                   Logout
