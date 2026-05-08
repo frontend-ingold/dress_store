@@ -1,4 +1,4 @@
-import { pool } from '../db.js';
+import { closePool, query } from '../db.js';
 import { amenities, destinations, properties } from '../data/seedData.js';
 
 function buildBookingReference() {
@@ -6,7 +6,7 @@ function buildBookingReference() {
 }
 
 async function seed() {
-  await pool.query('BEGIN');
+  await query('BEGIN');
 
   try {
     const destinationIds = new Map();
@@ -14,7 +14,7 @@ async function seed() {
     const propertyIds = new Map();
 
     for (const destination of destinations) {
-      const result = await pool.query(
+      const result = await query(
         `
           INSERT INTO destinations (slug, name, country, region, hero_image)
           VALUES ($1, $2, $3, $4, $5)
@@ -38,7 +38,7 @@ async function seed() {
     }
 
     for (const amenityName of amenities) {
-      const result = await pool.query(
+      const result = await query(
         `
           INSERT INTO amenities (name)
           VALUES ($1)
@@ -53,7 +53,7 @@ async function seed() {
     }
 
     for (const property of properties) {
-      const result = await pool.query(
+      const result = await query(
         `
           INSERT INTO properties (
             destination_id,
@@ -112,11 +112,11 @@ async function seed() {
       const propertyId = result.rows[0].id;
       propertyIds.set(property.slug, propertyId);
 
-      await pool.query('DELETE FROM property_images WHERE property_id = $1', [propertyId]);
-      await pool.query('DELETE FROM property_amenities WHERE property_id = $1', [propertyId]);
+      await query('DELETE FROM property_images WHERE property_id = $1', [propertyId]);
+      await query('DELETE FROM property_amenities WHERE property_id = $1', [propertyId]);
 
       for (const [index, imageUrl] of property.images.entries()) {
-        await pool.query(
+        await query(
           `
             INSERT INTO property_images (property_id, image_url, sort_order)
             VALUES ($1, $2, $3)
@@ -126,7 +126,7 @@ async function seed() {
       }
 
       for (const amenityName of property.amenities) {
-        await pool.query(
+        await query(
           `
             INSERT INTO property_amenities (property_id, amenity_id)
             VALUES ($1, $2)
@@ -137,7 +137,7 @@ async function seed() {
       }
     }
 
-    const existingBookingCount = await pool.query('SELECT COUNT(*)::int AS count FROM bookings');
+    const existingBookingCount = await query('SELECT COUNT(*)::int AS count FROM bookings');
 
     if (existingBookingCount.rows[0].count === 0) {
       const sampleBookings = [
@@ -166,7 +166,7 @@ async function seed() {
           (1000 * 60 * 60 * 24);
         const total = Number(property.nightlyRateUsd) * nights + Number(property.cleaningFeeUsd);
 
-        await pool.query(
+        await query(
           `
             INSERT INTO bookings (
               booking_reference,
@@ -201,10 +201,10 @@ async function seed() {
       }
     }
 
-    await pool.query('COMMIT');
+    await query('COMMIT');
     console.log('Database seeded.');
   } catch (error) {
-    await pool.query('ROLLBACK');
+    await query('ROLLBACK');
     throw error;
   }
 }
@@ -215,5 +215,5 @@ seed()
     process.exitCode = 1;
   })
   .finally(async () => {
-    await pool.end();
+    await closePool();
   });
