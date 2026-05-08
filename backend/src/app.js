@@ -4,6 +4,8 @@ import { config } from './config.js';
 import { query } from './db.js';
 import propertiesRoutes from './routes/propertiesRoutes.js';
 import bookingsRoutes from './routes/bookingsRoutes.js';
+import authRoutes from './routes/authRoutes.js';
+import accountRoutes from './routes/accountRoutes.js';
 
 const app = express();
 
@@ -66,6 +68,8 @@ app.get('/api/health', async (_req, res) => {
 
 app.use('/api', propertiesRoutes);
 app.use('/api', bookingsRoutes);
+app.use('/api', authRoutes);
+app.use('/api', accountRoutes);
 
 app.use((error, _req, res, _next) => {
   console.error(error);

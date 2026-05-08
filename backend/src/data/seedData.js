@@ -229,3 +229,51 @@ export const properties = [
     amenities: ['Private pool', 'Airport transfer', 'Fast Wi-Fi'],
   },
 ];
+
+export const reviews = [
+  {
+    propertySlug: 'the-daria',
+    guestName: 'Lena Brooks',
+    guestLocation: 'London, UK',
+    guestAvatar:
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80',
+    rating: 5,
+    reviewText: 'The lagoon view was unreal. The villa felt private, polished, and exactly like the photos.',
+  },
+  {
+    propertySlug: 'the-daria',
+    guestName: 'Marcus Hale',
+    guestLocation: 'New York, USA',
+    guestAvatar:
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80',
+    rating: 4.8,
+    reviewText: 'Great arrival experience and excellent housekeeping. The booking flow should absolutely show this property detail.',
+  },
+  {
+    propertySlug: 'azure-haven',
+    guestName: 'Priya Nair',
+    guestLocation: 'Mumbai, India',
+    guestAvatar:
+      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=200&q=80',
+    rating: 4.9,
+    reviewText: 'Very calm atmosphere, beautiful water access, and the spa add-ons were worth it.',
+  },
+  {
+    propertySlug: 'palm-breeze',
+    guestName: 'Daniel Chen',
+    guestLocation: 'Singapore',
+    guestAvatar:
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80',
+    rating: 4.9,
+    reviewText: 'Warm materials, good layout, and the pool zone felt better than many resorts we have booked.',
+  },
+  {
+    propertySlug: 'the-sanctuary',
+    guestName: 'Amelia Stone',
+    guestLocation: 'Sydney, Australia',
+    guestAvatar:
+      'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=200&q=80',
+    rating: 4.7,
+    reviewText: 'Stylish interiors and strong service. Perfect balance of design and practical comfort.',
+  },
+];

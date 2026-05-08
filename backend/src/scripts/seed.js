@@ -1,5 +1,5 @@
 import { closePool, query } from '../db.js';
-import { amenities, destinations, properties } from '../data/seedData.js';
+import { amenities, destinations, properties, reviews } from '../data/seedData.js';
 
 function buildBookingReference() {
   return `BK-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
@@ -135,6 +135,32 @@ async function seed() {
           [propertyId, amenityIds.get(amenityName)]
         );
       }
+    }
+
+    await query('DELETE FROM property_reviews');
+
+    for (const review of reviews) {
+      await query(
+        `
+          INSERT INTO property_reviews (
+            property_id,
+            guest_name,
+            guest_location,
+            guest_avatar,
+            rating,
+            review_text
+          )
+          VALUES ($1, $2, $3, $4, $5, $6)
+        `,
+        [
+          propertyIds.get(review.propertySlug),
+          review.guestName,
+          review.guestLocation,
+          review.guestAvatar,
+          review.rating,
+          review.reviewText,
+        ]
+      );
     }
 
     const existingBookingCount = await query('SELECT COUNT(*)::int AS count FROM bookings');

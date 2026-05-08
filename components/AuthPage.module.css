@@ -1,0 +1,133 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top left, rgba(17, 149, 212, 0.18), transparent 28%),
+    linear-gradient(180deg, #f6fbff 0%, #eef4f8 100%);
+}
+
+.shell {
+  width: min(100%, 1100px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 460px);
+  gap: 28px;
+  align-items: stretch;
+}
+
+.hero,
+.card {
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+}
+
+.hero {
+  padding: 40px;
+  color: #fff;
+  background:
+    linear-gradient(180deg, rgba(5, 25, 43, 0.2), rgba(5, 25, 43, 0.62)),
+    url('https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1400&q=80')
+      center/cover;
+}
+
+.logo {
+  display: inline-flex;
+  margin-bottom: 40px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.kicker {
+  display: inline-flex;
+  margin-bottom: 14px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  max-width: 12ch;
+  margin: 0 0 16px;
+  font-size: clamp(2.4rem, 4vw, 4.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+}
+
+.hero p {
+  max-width: 46ch;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 1.02rem;
+  line-height: 1.8;
+}
+
+.card {
+  padding: 32px;
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.cardHeader {
+  margin-bottom: 20px;
+}
+
+.cardHeader h2 {
+  margin: 0 0 8px;
+  font-size: 1.8rem;
+}
+
+.cardHeader p,
+.footer p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.feedback {
+  margin-bottom: 16px;
+  padding: 13px 14px;
+  border-radius: 14px;
+  background: rgba(17, 149, 212, 0.08);
+  border: 1px solid rgba(17, 149, 212, 0.16);
+}
+
+.form {
+  display: grid;
+  gap: 14px;
+}
+
+.form label {
+  display: grid;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.form input {
+  height: 50px;
+  padding: 0 14px;
+  border: 1px solid rgba(16, 24, 38, 0.12);
+  border-radius: 14px;
+  background: #f8fbff;
+}
+
+.footer {
+  margin-top: 18px;
+}
+
+.footer a {
+  color: var(--brand-dark);
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    min-height: 320px;
+  }
+}

@@ -114,7 +114,7 @@ export async function getPropertyBySlug(slug) {
 
   const property = propertyResult.rows[0];
 
-  const [imagesResult, amenitiesResult] = await Promise.all([
+  const [imagesResult, amenitiesResult, reviewsResult] = await Promise.all([
     query(
       `
         SELECT image_url
@@ -134,12 +134,27 @@ export async function getPropertyBySlug(slug) {
       `,
       [property.id]
     ),
+    query(
+      `
+        SELECT
+          guest_name,
+          guest_location,
+          guest_avatar,
+          rating::float AS rating,
+          review_text
+        FROM property_reviews
+        WHERE property_id = $1
+        ORDER BY created_at DESC, id DESC
+      `,
+      [property.id]
+    ),
   ]);
 
   return {
     ...property,
     images: imagesResult.rows.map((row) => row.image_url),
     amenities: amenitiesResult.rows.map((row) => row.name),
+    reviews: reviewsResult.rows,
   };
 }
 

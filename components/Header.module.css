@@ -31,6 +31,9 @@
 }
 
 .cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 132px;
   height: 44px;
   padding: 0 18px;

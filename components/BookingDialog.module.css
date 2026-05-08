@@ -11,8 +11,11 @@
 
 .modal {
   position: relative;
-  width: min(100%, 760px);
+  width: min(100%, 1120px);
+  max-height: calc(100vh - 40px);
+  overflow: auto;
   padding: 28px;
+  padding-top: 32px;
   background: #fff;
   border-radius: 28px;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.24);
@@ -38,6 +41,7 @@
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 18px;
+  padding-right: 88px;
 }
 
 .header h3 {
@@ -45,12 +49,18 @@
   font-size: 1.6rem;
 }
 
-.header p {
+.header p,
+.reviewHead p,
+.description,
+.reviewText,
+.totalRow p {
   margin: 0;
   color: var(--muted);
 }
 
 .priceChip {
+  flex-shrink: 0;
+  margin-right: 12px;
   padding: 10px 14px;
   color: var(--brand-dark);
   background: rgba(17, 149, 212, 0.08);
@@ -58,19 +68,172 @@
   font-weight: 700;
 }
 
-.summary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 22px;
+.loading {
+  margin-bottom: 12px;
+  color: var(--brand-dark);
+  font-size: 0.92rem;
+  font-weight: 600;
 }
 
-.summary span {
+.gallery {
+  display: grid;
+  grid-template-columns: 1.3fr repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.imageWrap {
+  position: relative;
+  min-height: 140px;
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.heroImageWrap {
+  min-height: 292px;
+  grid-row: span 2;
+}
+
+.image,
+.avatar {
+  object-fit: cover;
+}
+
+.tags span {
   padding: 10px 12px;
   background: #f8fafc;
   border-radius: 999px;
   color: #334155;
   font-size: 0.92rem;
+}
+
+.tripEditor {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.tripEditor label,
+.nightsChip {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid rgba(16, 24, 38, 0.08);
+  border-radius: 18px;
+  background: #f8fbff;
+  color: #1f2937;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.tripEditor input,
+.tripEditor select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid rgba(16, 24, 38, 0.12);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0 12px;
+}
+
+.nightsChip {
+  align-content: center;
+  color: var(--brand-dark);
+}
+
+.details {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 24px;
+}
+
+.infoPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.infoPanel h4 {
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+}
+
+.description {
+  line-height: 1.8;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.reviews {
+  display: grid;
+  gap: 14px;
+}
+
+.reviewCard {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 18px;
+}
+
+.reviewHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.avatarWrap {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #dbeafe;
+}
+
+.reviewHead strong {
+  display: block;
+}
+
+.reviewRating {
+  margin-left: auto;
+  color: var(--brand-dark);
+  font-weight: 700;
+}
+
+.reviewText {
+  line-height: 1.7;
+}
+
+.form {
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+  background: #fbfdff;
+  border: 1px solid rgba(16, 24, 38, 0.08);
+  border-radius: 24px;
+}
+
+.authNotice {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(246, 196, 83, 0.16);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.errorNotice {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(187, 35, 65, 0.14);
+  background: rgba(187, 35, 65, 0.08);
+  color: #8b1e35;
+  font-weight: 600;
 }
 
 .form label {
@@ -114,23 +277,42 @@
   margin-bottom: 6px;
 }
 
-.totalRow p {
-  margin: 0;
-  color: var(--muted);
+@media (max-width: 900px) {
+  .gallery,
+  .details,
+  .grid,
+  .tripEditor {
+    grid-template-columns: 1fr;
+  }
+
+  .heroImageWrap {
+    min-height: 220px;
+    grid-row: auto;
+  }
 }
 
 @media (max-width: 700px) {
   .modal {
     padding: 24px 16px;
+    padding-top: 28px;
   }
 
   .header,
-  .totalRow {
+  .totalRow,
+  .reviewHead {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .grid {
-    grid-template-columns: 1fr;
+  .reviewRating {
+    margin-left: 0;
+  }
+
+  .header {
+    padding-right: 56px;
+  }
+
+  .priceChip {
+    margin-right: 0;
   }
 }

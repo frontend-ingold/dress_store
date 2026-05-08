@@ -1,4 +1,5 @@
 import express from 'express';
+import { optionalAuth } from '../middleware/authMiddleware.js';
 import { createBooking, getBookingByReference, getConflictingBooking } from '../repositories/bookingsRepository.js';
 import { getPropertyBySlug } from '../repositories/propertiesRepository.js';
 import {
@@ -10,7 +11,7 @@ import {
 
 const router = express.Router();
 
-router.post('/bookings', async (req, res, next) => {
+router.post('/bookings', optionalAuth, async (req, res, next) => {
   try {
     const {
       propertySlug,
@@ -22,6 +23,10 @@ router.post('/bookings', async (req, res, next) => {
       checkOut,
       specialRequest,
     } = req.body;
+
+    if (!req.auth?.user) {
+      return res.status(401).json({ message: 'Login required to confirm booking' });
+    }
 
     if (!propertySlug || !guestName || !guestEmail || !guestsCount || !checkIn || !checkOut) {
       return res.status(400).json({ message: 'Missing required booking fields' });
@@ -60,6 +65,7 @@ router.post('/bookings', async (req, res, next) => {
 
     const booking = await createBooking({
       bookingReference: makeBookingReference(),
+      userId: req.auth.user.id,
       propertyId: property.id,
       guestName,
       guestEmail,
