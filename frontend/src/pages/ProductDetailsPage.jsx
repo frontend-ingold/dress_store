@@ -5,6 +5,7 @@ import Toast from "../components/landing/Toast";
 import Footer from "../components/landing/Footer";
 import { footerSections } from "../data/landingContent";
 import useCart from "../hooks/useCart";
+import useFavorites from "../hooks/useFavorites";
 import useProducts from "../hooks/useProducts";
 import useShopSession from "../hooks/useShopSession";
 
@@ -45,12 +46,37 @@ function getProductPathParamFromHash() {
   return match ? decodeURIComponent(match[1]) : "";
 }
 
+function HeartIcon({ filled = false }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 20.6 4.85 13.8A4.92 4.92 0 0 1 12 7.04a4.92 4.92 0 0 1 7.15 6.76L12 20.6Z"
+        fill={filled ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ZoomIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M16 16L21 21" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M11 8.5v5M8.5 11h5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 function ProductDetailsPage() {
   const { products, isLoading, error } = useProducts();
   const { addItem, itemCount } = useCart();
+  const { isFavorite, toggleFavorite } = useFavorites();
   const { isAuthenticated, continueAsGuest, login, register, forgotPassword, resetPassword } =
     useShopSession();
-  const productPathParam = getProductPathParamFromHash();
+  const [productPathParam, setProductPathParam] = useState(getProductPathParamFromHash);
   const [quantity, setQuantity] = useState(1);
   const [cartFeedback, setCartFeedback] = useState("");
   const [cartError, setCartError] = useState("");
@@ -61,6 +87,7 @@ function ProductDetailsPage() {
   const [authError, setAuthError] = useState("");
   const [authInfo, setAuthInfo] = useState("");
   const [pendingAction, setPendingAction] = useState(null);
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
 
   const product = useMemo(
     () =>
@@ -80,6 +107,15 @@ function ProductDetailsPage() {
       .filter((item) => item.category === product.category && item.id !== product.id)
       .slice(0, 4);
   }, [product, products]);
+
+  useEffect(() => {
+    function handleHashChange() {
+      setProductPathParam(getProductPathParamFromHash());
+    }
+
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -236,7 +272,18 @@ function ProductDetailsPage() {
             <section className="product-detail-shell">
               <div className="product-detail-media">
                 <div className="product-detail-image-frame">
-                  <img src={product.imageUrl} alt={product.name} />
+                  <button
+                    type="button"
+                    className="product-detail-image-button"
+                    onClick={() => setIsZoomOpen(true)}
+                    aria-label="Zoom product image"
+                  >
+                    <img src={product.imageUrl} alt={product.name} />
+                    <span className="product-image-zoom-chip">
+                      <ZoomIcon />
+                      Zoom
+                    </span>
+                  </button>
                   {getDiscountLabel(product) ? (
                     <span className="discount-ribbon product-detail-ribbon">
                       {getDiscountLabel(product)}
@@ -259,15 +306,26 @@ function ProductDetailsPage() {
 
                 <div className="product-detail-meta">
                   <span className="product-detail-category">{product.category}</span>
-                  <div className="price-pair product-detail-price-pair">
-                    {product.specialPrice ? (
-                      <span className="price-original">
-                        {currency.format(Number(product.price))}
-                      </span>
-                    ) : null}
-                    <strong className="price-current">
-                      {currency.format(getDisplayPrice(product))}
-                    </strong>
+                  <div className="product-detail-meta-actions">
+                    <div className="price-pair product-detail-price-pair">
+                      {product.specialPrice ? (
+                        <span className="price-original">
+                          {currency.format(Number(product.price))}
+                        </span>
+                      ) : null}
+                      <strong className="price-current">
+                        {currency.format(getDisplayPrice(product))}
+                      </strong>
+                    </div>
+                    <button
+                      type="button"
+                      className={isFavorite(product.id) ? "favorite-icon-button active" : "favorite-icon-button"}
+                      onClick={() => toggleFavorite(product.id)}
+                      aria-label={isFavorite(product.id) ? "Remove from favourites" : "Add to favourites"}
+                      title={isFavorite(product.id) ? "Saved to favourites" : "Add to favourites"}
+                    >
+                      <HeartIcon filled={isFavorite(product.id)} />
+                    </button>
                   </div>
                 </div>
 
@@ -345,18 +403,19 @@ function ProductDetailsPage() {
 
                 <div className="related-products-grid">
                   {relatedProducts.map((item) => (
-                    <article key={item.id} className="related-product-card">
-                      <a
-                        href={`#/products/${encodeURIComponent(item.slug || item.id)}`}
-                        className="related-product-image"
-                      >
+                    <a
+                      key={item.id}
+                      href={`#/products/${encodeURIComponent(item.slug || item.id)}`}
+                      className="related-product-card"
+                    >
+                      <div className="related-product-image">
                         <img src={item.imageUrl} alt={item.name} />
                         {getDiscountLabel(item) ? (
                           <span className="discount-ribbon related-product-ribbon">
                             {getDiscountLabel(item)}
                           </span>
                         ) : null}
-                      </a>
+                      </div>
                       <div className="related-product-copy">
                         <span>{item.category}</span>
                         <h3>{item.name}</h3>
@@ -371,12 +430,10 @@ function ProductDetailsPage() {
                               {currency.format(getDisplayPrice(item))}
                             </strong>
                           </div>
-                          <a href={`#/products/${encodeURIComponent(item.slug || item.id)}`}>
-                            View details
-                          </a>
+                          <span className="related-product-cta">View details</span>
                         </div>
                       </div>
-                    </article>
+                    </a>
                   ))}
                 </div>
               </section>
@@ -403,6 +460,28 @@ function ProductDetailsPage() {
           errorMessage={authError}
           infoMessage={authInfo}
         />
+      ) : null}
+
+      {isZoomOpen && product ? (
+        <div
+          className="image-zoom-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Zoomed product image"
+          onClick={() => setIsZoomOpen(false)}
+        >
+          <button
+            type="button"
+            className="image-zoom-close"
+            onClick={() => setIsZoomOpen(false)}
+            aria-label="Close image zoom"
+          >
+            Close
+          </button>
+          <div className="image-zoom-frame" onClick={(event) => event.stopPropagation()}>
+            <img src={product.imageUrl} alt={product.name} />
+          </div>
+        </div>
       ) : null}
 
       <Footer footerSections={footerSections} />

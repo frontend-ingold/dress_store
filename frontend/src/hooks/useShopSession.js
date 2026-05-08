@@ -112,6 +112,22 @@ function useShopSession() {
     [persistSession]
   );
 
+  const currentUser = useMemo(() => {
+    if (!session) {
+      return null;
+    }
+
+    if (session.user) {
+      return session.user;
+    }
+
+    return {
+      id: null,
+      name: session.name || "Guest shopper",
+      email: session.email || ""
+    };
+  }, [session]);
+
   useEffect(() => {
     function syncSession() {
       setSession(readStoredSession());
@@ -124,7 +140,9 @@ function useShopSession() {
   return useMemo(
     () => ({
       session,
+      currentUser,
       isAuthenticated: Boolean(session),
+      isGuest: session?.mode === "guest",
       continueAsGuest,
       login,
       register,
@@ -132,7 +150,7 @@ function useShopSession() {
       resetPassword,
       clearSession
     }),
-    [clearSession, continueAsGuest, forgotPassword, login, register, resetPassword, session]
+    [clearSession, continueAsGuest, currentUser, forgotPassword, login, register, resetPassword, session]
   );
 }
 

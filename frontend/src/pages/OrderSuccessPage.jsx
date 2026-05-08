@@ -25,6 +25,22 @@ function getSuccessParams() {
   };
 }
 
+function CheckBadge() {
+  return (
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="32" r="31" fill="none" stroke="currentColor" strokeWidth="2" />
+      <path
+        d="M18 33.5 27.4 43 46 23.8"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function OrderSuccessPage() {
   const { orderId, total } = getSuccessParams();
 
@@ -34,15 +50,36 @@ function OrderSuccessPage() {
 
       <main className="success-page">
         <section className="success-card">
+          <div className="success-badge">
+            <CheckBadge />
+          </div>
           <p className="section-subtitle">Order confirmed</p>
-          <h1>Your order has been placed</h1>
-          <p>
-            Reference <strong>#{orderId || "Pending"}</strong>
+          <h1>Your order has been placed successfully</h1>
+          <p className="success-copy">
+            Thank you for shopping with Atelier. Your order has been recorded and is now ready for processing.
           </p>
-          {total ? <p>Total paid: {currency.format(Number(total))}</p> : null}
+
+          <div className="success-summary">
+            <div className="success-summary-card">
+              <span>Order reference</span>
+              <strong>#{orderId || "Pending"}</strong>
+            </div>
+            <div className="success-summary-card">
+              <span>Total paid</span>
+              <strong>{total ? currency.format(Number(total)) : "--"}</strong>
+            </div>
+            <div className="success-summary-card">
+              <span>Status</span>
+              <strong>Pending</strong>
+            </div>
+          </div>
+
           <div className="success-actions">
             <a href="#/products" className="catalog-banner-link primary">
               Continue shopping
+            </a>
+            <a href="#/account/orders" className="catalog-banner-link secondary">
+              View orders
             </a>
             <a href="#/" className="product-detail-secondary-link">
               Return home

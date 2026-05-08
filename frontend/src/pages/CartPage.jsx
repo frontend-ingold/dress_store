@@ -3,6 +3,7 @@ import Header from "../components/landing/Header";
 import Footer from "../components/landing/Footer";
 import { footerSections } from "../data/landingContent";
 import useCart from "../hooks/useCart";
+import useOrderHistory from "../hooks/useOrderHistory";
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -26,8 +27,26 @@ const initialForm = {
   postalCode: ""
 };
 
+function EmptyCartIcon() {
+  return (
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="24" cy="52" r="4" fill="currentColor" />
+      <circle cx="46" cy="52" r="4" fill="currentColor" />
+      <path
+        d="M8 10h6l5.2 28.8a2 2 0 0 0 2 1.6h23.1a2 2 0 0 0 2-1.6L52 20H18.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 function CartPage() {
   const { cart, isLoading, error, updateItem, removeItem, checkout } = useCart();
+  const { addOrder } = useOrderHistory();
   const [form, setForm] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -42,7 +61,29 @@ function CartPage() {
     try {
       setIsSubmitting(true);
       setSubmitError("");
+      const orderSnapshot = {
+        customerName: form.customerName,
+        email: form.email,
+        phone: form.phone,
+        address: form.address,
+        city: form.city,
+        postalCode: form.postalCode,
+        items: cart.items.map((item) => ({
+          productId: item.productId,
+          slug: item.slug,
+          name: item.name,
+          imageUrl: item.imageUrl,
+          quantity: item.quantity,
+          lineTotal: item.lineTotal
+        }))
+      };
       const result = await checkout(form);
+      addOrder({
+        ...orderSnapshot,
+        orderId: result.orderId,
+        totalAmount: result.totalAmount,
+        status: "pending"
+      });
       setForm(initialForm);
       window.location.hash = `#/success?orderId=${encodeURIComponent(
         result.orderId
@@ -97,11 +138,22 @@ function CartPage() {
 
         {!isLoading && !hasItems ? (
           <section className="cart-empty">
+            <div className="cart-empty-badge">
+              <EmptyCartIcon />
+            </div>
+            <p className="section-subtitle">Cart empty</p>
             <h2>Your cart is empty.</h2>
-            <p>Add a few pieces from the catalog to continue.</p>
-            <a href="#/products" className="catalog-banner-link primary">
-              Browse products
-            </a>
+            <p className="cart-empty-copy">
+              Your curated picks will appear here once you add products from the collection.
+            </p>
+            <div className="cart-empty-actions">
+              <a href="#/products" className="catalog-banner-link primary">
+                Browse products
+              </a>
+              <a href="#/" className="catalog-banner-link secondary">
+                Return home
+              </a>
+            </div>
           </section>
         ) : null}
 

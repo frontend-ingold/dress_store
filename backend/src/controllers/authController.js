@@ -55,6 +55,56 @@ function buildSessionPayload(user) {
   };
 }
 
+export async function getUserProfile(request, response, next) {
+  const userId = Number(request.params.userId);
+
+  if (!Number.isInteger(userId) || userId < 1) {
+    response.status(400).json({ message: "A valid user id is required." });
+    return;
+  }
+
+  try {
+    const users = await query(
+      `SELECT
+         u.id,
+         u.name,
+         u.email,
+         u.created_at AS "createdAt",
+         COUNT(o.id)::int AS "orderCount",
+         COALESCE(SUM(o.total_amount), 0)::numeric AS "totalSpent",
+         MAX(o.created_at) AS "lastOrderAt"
+       FROM users u
+       LEFT JOIN orders o
+         ON LOWER(o.email) = LOWER(u.email)
+       WHERE u.id = $1
+         AND u.is_active = TRUE
+       GROUP BY u.id, u.name, u.email, u.created_at
+       LIMIT 1`,
+      [userId]
+    );
+    const user = users[0];
+
+    if (!user) {
+      response.status(404).json({ message: "Profile not found." });
+      return;
+    }
+
+    response.json({
+      profile: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt,
+        orderCount: Number(user.orderCount || 0),
+        totalSpent: Number(user.totalSpent || 0),
+        lastOrderAt: user.lastOrderAt
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function registerUser(request, response, next) {
   const name = request.body.name?.trim?.() || "";
   const email = normalizeEmail(request.body.email);
