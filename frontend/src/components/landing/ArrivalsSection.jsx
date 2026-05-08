@@ -22,7 +22,11 @@ function ArrivalsSection({ newArrivals }) {
 
       <div className="products-grid">
         {newArrivals.map((item) => (
-          <article key={item.name} className="product-card">
+          <a
+            key={item.id || item.slug || item.name}
+            href={`#/products/${encodeURIComponent(item.slug || item.id)}`}
+            className="product-card"
+          >
             <div className="product-image">
               <img src={item.imageUrl} alt={item.name} />
               {getDiscountLabel(item) ? (
@@ -30,9 +34,7 @@ function ArrivalsSection({ newArrivals }) {
                   {getDiscountLabel(item)}
                 </span>
               ) : null}
-              <button type="button" className="quick-add">
-                Quick Add
-              </button>
+              <span className="quick-add">View Details</span>
             </div>
             <div className="product-info">
               <h3 className="product-name">{item.name}</h3>
@@ -47,7 +49,7 @@ function ArrivalsSection({ newArrivals }) {
                 )}
               </p>
             </div>
-          </article>
+          </a>
         ))}
       </div>
     </section>

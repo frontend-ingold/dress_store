@@ -75,7 +75,8 @@ export async function getUserProfile(request, response, next) {
          MAX(o.created_at) AS "lastOrderAt"
        FROM users u
        LEFT JOIN orders o
-         ON LOWER(o.email) = LOWER(u.email)
+         ON o.user_id = u.id
+         OR (o.user_id IS NULL AND LOWER(o.email) = LOWER(u.email))
        WHERE u.id = $1
          AND u.is_active = TRUE
        GROUP BY u.id, u.name, u.email, u.created_at

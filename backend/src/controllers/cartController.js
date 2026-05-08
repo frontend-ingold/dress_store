@@ -19,6 +19,25 @@ function validateCheckout(body) {
   return null;
 }
 
+async function resolveActiveUserId(client, userId) {
+  const parsedUserId = Number(userId);
+
+  if (!Number.isInteger(parsedUserId) || parsedUserId < 1) {
+    return null;
+  }
+
+  const users = await client.query(
+    `SELECT id
+     FROM users
+     WHERE id = $1
+       AND is_active = TRUE
+     LIMIT 1`,
+    [parsedUserId]
+  );
+
+  return users.rows[0]?.id || null;
+}
+
 async function ensureCart(client, cartToken) {
   const existingCart = await client.query(
     `SELECT id, cart_token AS "cartToken"
@@ -272,6 +291,7 @@ export async function checkoutCart(request, response, next) {
 
   try {
     const result = await withTransaction(async (client) => {
+      const userId = await resolveActiveUserId(client, request.body.userId);
       const cart = await getCartSnapshot(client, request.body.cartToken.trim());
 
       if (!cart.items.length) {
@@ -298,10 +318,11 @@ export async function checkoutCart(request, response, next) {
 
       const orderResult = await client.query(
         `INSERT INTO orders
-         (customer_name, email, phone, address, city, postal_code, total_amount, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
+         (user_id, customer_name, email, phone, address, city, postal_code, total_amount, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')
          RETURNING id`,
         [
+          userId,
           request.body.customerName.trim(),
           request.body.email.trim(),
           request.body.phone.trim(),

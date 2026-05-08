@@ -1,7 +1,7 @@
 import Header from "../components/landing/Header";
 import Footer from "../components/landing/Footer";
 import { footerSections } from "../data/landingContent";
-import useOrderHistory from "../hooks/useOrderHistory";
+import useOrders from "../hooks/useOrders";
 
 const orderDetailsLinks = [
   { label: "Home", href: "#/" },
@@ -22,7 +22,7 @@ function getOrderIdFromHash() {
 }
 
 function OrderDetailsPage() {
-  const { orders } = useOrderHistory();
+  const { orders, isLoading, error } = useOrders();
   const orderId = getOrderIdFromHash();
   const order = orders.find((item) => String(item.orderId) === String(orderId));
 
@@ -31,7 +31,9 @@ function OrderDetailsPage() {
       <Header navigationLinks={orderDetailsLinks} />
 
       <main className="account-page">
-        {!order ? (
+        {error ? <p className="catalog-status error">{error}</p> : null}
+        {isLoading ? <p className="catalog-status">Loading order details...</p> : null}
+        {!isLoading && !order ? (
           <section className="account-empty-state">
             <h2>Order not found.</h2>
             <p>The requested order details are unavailable in this browser session.</p>
@@ -39,7 +41,9 @@ function OrderDetailsPage() {
               Back to orders
             </a>
           </section>
-        ) : (
+        ) : null}
+
+        {!isLoading && order ? (
           <>
             <section className="account-hero compact">
               <div className="account-hero-copy">
@@ -161,7 +165,7 @@ function OrderDetailsPage() {
               </div>
             </section>
           </>
-        )}
+        ) : null}
       </main>
 
       <Footer footerSections={footerSections} />

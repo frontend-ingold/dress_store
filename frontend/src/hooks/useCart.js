@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiBaseUrl } from "../config/api";
+import useShopSession from "./useShopSession";
 
 const CART_TOKEN_KEY = "atelier-cart-token";
 
@@ -35,6 +36,7 @@ function normalizeCart(cart) {
 }
 
 function useCart() {
+  const { currentUser, isGuest } = useShopSession();
   const [cartToken] = useState(getCartToken);
   const [cart, setCart] = useState(() =>
     normalizeCart({
@@ -128,6 +130,7 @@ function useCart() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           cartToken,
+          userId: !isGuest ? currentUser?.id : null,
           ...payload
         })
       });
@@ -148,7 +151,7 @@ function useCart() {
 
       return data;
     },
-    [cartToken]
+    [cartToken, currentUser?.id, isGuest]
   );
 
   return useMemo(

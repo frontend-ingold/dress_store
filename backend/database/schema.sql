@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS cart_items (
 
 CREATE TABLE IF NOT EXISTS orders (
   id SERIAL PRIMARY KEY,
+  user_id INT,
   customer_name VARCHAR(120) NOT NULL,
   email VARCHAR(120) NOT NULL,
   phone VARCHAR(30) NOT NULL,
@@ -89,8 +90,25 @@ CREATE TABLE IF NOT EXISTS orders (
   postal_code VARCHAR(20) NOT NULL,
   total_amount DECIMAL(10, 2) NOT NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'pending',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_orders_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
+
+ALTER TABLE orders
+ADD COLUMN IF NOT EXISTS user_id INT;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'fk_orders_user'
+  ) THEN
+    ALTER TABLE orders
+    ADD CONSTRAINT fk_orders_user
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL;
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS order_items (
   id SERIAL PRIMARY KEY,

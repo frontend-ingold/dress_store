@@ -1,7 +1,8 @@
 import Header from "../components/landing/Header";
 import Footer from "../components/landing/Footer";
 import { footerSections } from "../data/landingContent";
-import useOrderHistory from "../hooks/useOrderHistory";
+import useOrders from "../hooks/useOrders";
+import useShopSession from "../hooks/useShopSession";
 
 const ordersLinks = [
   { label: "Home", href: "#/" },
@@ -17,19 +18,22 @@ const currency = new Intl.NumberFormat("en-US", {
 });
 
 function OrdersPage() {
-  const { orders } = useOrderHistory();
+  const { isAuthenticated, isGuest } = useShopSession();
+  const { orders, isLoading, error } = useOrders();
 
   return (
     <>
       <Header navigationLinks={ordersLinks} />
 
       <main className="account-page">
+        {error ? <p className="catalog-status error">{error}</p> : null}
+        {isLoading ? <p className="catalog-status">Loading orders...</p> : null}
         <section className="account-hero compact">
           <div className="account-hero-copy">
             <p className="section-subtitle">My account</p>
             <h1 className="catalog-heading">Orders list</h1>
             <p className="account-hero-text">
-              Review order references, totals, and expand any row to inspect full order details.
+              Review order references, totals, and open any record to inspect full order details.
             </p>
           </div>
           <div className="account-hero-badge small">
@@ -38,15 +42,31 @@ function OrdersPage() {
           </div>
         </section>
 
-        {!orders.length ? (
+        {!isAuthenticated ? (
+          <section className="account-empty-state">
+            <h2>You are not signed in.</h2>
+            <p>Use the account icon in the header to login, register, or continue as guest.</p>
+            <a href="#/products" className="catalog-banner-link primary">
+              Browse products
+            </a>
+          </section>
+        ) : null}
+
+        {isAuthenticated && !isLoading && !orders.length ? (
           <section className="account-empty-state">
             <h2>No orders recorded yet.</h2>
-            <p>Orders placed from this browser will appear here after checkout.</p>
+            <p>
+              {isGuest
+                ? "Orders placed from this browser will appear here after checkout."
+                : "Completed orders linked to your account email will appear here."}
+            </p>
             <a href="#/products" className="catalog-banner-link primary">
               Start shopping
             </a>
           </section>
-        ) : (
+        ) : null}
+
+        {isAuthenticated && orders.length ? (
           <section className="account-dashboard">
             <aside className="account-nav-card">
               <p className="account-nav-label">Account navigation</p>
@@ -93,7 +113,7 @@ function OrdersPage() {
               </section>
             </div>
           </section>
-        )}
+        ) : null}
       </main>
 
       <Footer footerSections={footerSections} />
