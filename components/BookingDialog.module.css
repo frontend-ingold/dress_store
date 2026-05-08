@@ -1,0 +1,136 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(5, 8, 13, 0.56);
+  backdrop-filter: blur(10px);
+}
+
+.modal {
+  position: relative;
+  width: min(100%, 760px);
+  padding: 28px;
+  background: #fff;
+  border-radius: 28px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.24);
+}
+
+.closeButton {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 999px;
+  background: #f1f5f9;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.header h3 {
+  margin: 0 0 6px;
+  font-size: 1.6rem;
+}
+
+.header p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.priceChip {
+  padding: 10px 14px;
+  color: var(--brand-dark);
+  background: rgba(17, 149, 212, 0.08);
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.summary span {
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 999px;
+  color: #334155;
+  font-size: 0.92rem;
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #1f2937;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.grid label:last-child {
+  grid-column: 1 / -1;
+}
+
+.form input,
+.form textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid rgba(16, 24, 38, 0.12);
+  border-radius: 16px;
+  outline: none;
+}
+
+.totalRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.totalRow strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.totalRow p {
+  margin: 0;
+  color: var(--muted);
+}
+
+@media (max-width: 700px) {
+  .modal {
+    padding: 24px 16px;
+  }
+
+  .header,
+  .totalRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,14 +1,16 @@
+'use client';
+
 import Image from 'next/image';
 import styles from './HeroSection.module.css';
 
 const fields = [
-  { label: 'Location', value: 'Add destination', icon: 'location' },
-  { label: 'Check in', value: 'Add dates', icon: 'calendar' },
-  { label: 'Check out', value: 'Add dates', icon: 'calendar' },
-  { label: 'Guests', value: 'Add guests', icon: 'guests' },
+  { name: 'location', label: 'Location', icon: 'location', placeholder: 'Add destination', type: 'text' },
+  { name: 'checkIn', label: 'Check in', icon: 'calendar', placeholder: 'Add dates', type: 'date' },
+  { name: 'checkOut', label: 'Check out', icon: 'calendar', placeholder: 'Add dates', type: 'date' },
+  { name: 'guests', label: 'Guests', icon: 'guests', placeholder: 'Add guests', type: 'select' },
 ];
 
-export default function HeroSection() {
+export default function HeroSection({ filters, onFilterChange, onSearch, isLoading, feedback }) {
   return (
     <section className={styles.hero} id="home">
       <div className={styles.banner}>
@@ -26,7 +28,9 @@ export default function HeroSection() {
         <div className={`${styles.bookingPanel} card`}>
           <div className={styles.copy}>
             <h1 className={styles.title}>Good Morning!</h1>
-            <p className={styles.subtitle}>Explore beautiful places in the world with Acenda</p>
+            <p className={styles.subtitle}>
+              Explore beautiful places in the world with Acenda and search live availability.
+            </p>
           </div>
 
           <div className={styles.searchCard}>
@@ -42,16 +46,42 @@ export default function HeroSection() {
                   }`}
                   aria-hidden="true"
                 />
-                <div className={styles.fieldText}>
+                <label className={styles.fieldText}>
                   <span className={styles.fieldLabel}>{field.label}</span>
-                  <span className={styles.fieldValue}>{field.value}</span>
-                </div>
+                  {field.type === 'select' ? (
+                    <select
+                      className={styles.fieldInput}
+                      value={filters[field.name]}
+                      onChange={(event) => onFilterChange(field.name, event.target.value)}
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map((count) => (
+                        <option key={count} value={count}>
+                          {count} guest{count > 1 ? 's' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type={field.type}
+                      className={styles.fieldInput}
+                      value={filters[field.name]}
+                      placeholder={field.placeholder}
+                      onChange={(event) => onFilterChange(field.name, event.target.value)}
+                    />
+                  )}
+                </label>
               </div>
             ))}
-            <button className={styles.searchButton} aria-label="Search stays">
+            <button
+              className={styles.searchButton}
+              aria-label="Search stays"
+              onClick={onSearch}
+              disabled={isLoading}
+            >
               <span className={styles.searchIcon} />
             </button>
           </div>
+          {feedback ? <p className={styles.feedback}>{feedback}</p> : null}
         </div>
       </div>
     </section>

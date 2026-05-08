@@ -1,0 +1,19 @@
+import pg from 'pg';
+import { config } from './config.js';
+
+const { Pool } = pg;
+
+if (!config.databaseUrl) {
+  throw new Error('DATABASE_URL is required');
+}
+
+export const pool = new Pool({
+  connectionString: config.databaseUrl,
+  ssl: {
+    rejectUnauthorized: false,
+  },
+});
+
+export async function query(text, params) {
+  return pool.query(text, params);
+}

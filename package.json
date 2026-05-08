@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:client": "next dev",
+    "dev:backend": "npm --prefix backend run dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
