@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import AuthPage from '@/components/AuthPage';
 
 export const metadata = {
@@ -5,5 +6,9 @@ export const metadata = {
 };
 
 export default function LoginPage() {
-  return <AuthPage mode="login" />;
+  return (
+    <Suspense fallback={null}>
+      <AuthPage mode="login" />
+    </Suspense>
+  );
 }
