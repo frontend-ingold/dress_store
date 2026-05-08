@@ -86,13 +86,13 @@ function useCart() {
   }, []);
 
   const addItem = useCallback(
-    async (productId, quantity = 1) =>
+    async (productId, quantity = 1, variantId = null) =>
       mutateCart(
         `${apiBaseUrl}/cart/items`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cartToken, productId, quantity })
+          body: JSON.stringify({ cartToken, productId, quantity, variantId })
         },
         "Unable to add product to cart."
       ),
@@ -100,13 +100,13 @@ function useCart() {
   );
 
   const updateItem = useCallback(
-    async (productId, quantity) =>
+    async (cartItemId, quantity) =>
       mutateCart(
         `${apiBaseUrl}/cart/items`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cartToken, productId, quantity })
+          body: JSON.stringify({ cartToken, cartItemId, quantity })
         },
         "Unable to update cart item."
       ),
@@ -114,9 +114,9 @@ function useCart() {
   );
 
   const removeItem = useCallback(
-    async (productId) =>
+    async (cartItemId) =>
       mutateCart(
-        `${apiBaseUrl}/cart/items/${productId}?cartToken=${encodeURIComponent(cartToken)}`,
+        `${apiBaseUrl}/cart/items/${cartItemId}?cartToken=${encodeURIComponent(cartToken)}`,
         { method: "DELETE" },
         "Unable to remove cart item."
       ),

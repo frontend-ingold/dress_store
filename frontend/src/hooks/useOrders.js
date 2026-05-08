@@ -52,13 +52,29 @@ function useOrders() {
   }, [currentUser?.id, isAuthenticated, isGuest]);
 
   const mergedOrders = useMemo(() => {
-    if (!isAuthenticated || isGuest) {
-      return localOrders;
+    if (!isAuthenticated) {
+      return [];
+    }
+
+    if (isGuest) {
+      return localOrders
+        .filter((order) => order?.sessionMode === "guest")
+        .sort(
+          (left, right) =>
+            new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime()
+        );
     }
 
     const orderMap = new Map();
+    const memberLocalOrders = localOrders.filter((order) => {
+      if (order?.sessionMode === "member") {
+        return String(order.sessionUserId || "") === String(currentUser?.id || "");
+      }
 
-    [...apiOrders, ...localOrders].forEach((order) => {
+      return !order?.sessionMode;
+    });
+
+    [...apiOrders, ...memberLocalOrders].forEach((order) => {
       if (!order?.orderId) {
         return;
       }
@@ -71,7 +87,7 @@ function useOrders() {
     return Array.from(orderMap.values()).sort(
       (left, right) => new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime()
     );
-  }, [apiOrders, isAuthenticated, isGuest, localOrders]);
+  }, [apiOrders, currentUser?.id, isAuthenticated, isGuest, localOrders]);
 
   return useMemo(
     () => ({

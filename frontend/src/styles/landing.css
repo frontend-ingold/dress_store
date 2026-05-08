@@ -702,6 +702,14 @@ img {
   color: #716965;
 }
 
+.order-item-variant,
+.cart-item-variant {
+  margin-bottom: 0.55rem;
+  color: #6f6762;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
 .order-products-list {
   display: grid;
   gap: 0.9rem;
@@ -1791,6 +1799,8 @@ img {
 .product-detail-media {
   overflow: hidden;
   padding: 1.1rem;
+  display: grid;
+  gap: 0.85rem;
 }
 
 .product-detail-image-frame {
@@ -1841,6 +1851,38 @@ img {
 .product-image-zoom-chip svg {
   width: 0.9rem;
   height: 0.9rem;
+}
+
+.product-gallery-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+  max-width: 460px;
+  margin: 0 auto;
+}
+
+.product-gallery-thumb {
+  border: 1px solid rgba(42, 37, 34, 0.1);
+  background: rgba(255, 255, 255, 0.86);
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  aspect-ratio: 1;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.product-gallery-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-gallery-thumb:hover,
+.product-gallery-thumb:focus-visible,
+.product-gallery-thumb.active {
+  transform: translateY(-1px);
+  border-color: rgba(193, 115, 82, 0.34);
+  box-shadow: 0 12px 22px rgba(42, 37, 34, 0.08);
 }
 
 .image-zoom-overlay {
@@ -1988,6 +2030,51 @@ img {
   color: #625853;
   line-height: 1.75;
   font-size: 0.94rem;
+}
+
+.product-configurator {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 1.2rem;
+}
+
+.product-config-group {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.product-config-label {
+  color: #8b6555;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.product-config-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.product-config-value {
+  min-height: 40px;
+  border: 1px solid rgba(42, 37, 34, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--charcoal);
+  padding: 0 0.9rem;
+  cursor: pointer;
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.product-config-value:hover,
+.product-config-value:focus-visible,
+.product-config-value.active {
+  transform: translateY(-1px);
+  border-color: rgba(193, 115, 82, 0.34);
+  color: var(--terracotta);
+  box-shadow: 0 10px 20px rgba(193, 115, 82, 0.08);
 }
 
 .product-detail-panels {

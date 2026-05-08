@@ -97,7 +97,9 @@ function OrdersPage() {
                       <span className="order-row-id">#{order.orderId}</span>
                       <span>{order.customerName}</span>
                       <span>{order.email}</span>
-                      <strong>{currency.format(Number(order.totalAmount || 0))}</strong>
+                      <strong>
+                        {currency.format(Number(order.grandTotal || order.totalAmount || 0))}
+                      </strong>
                       <span className="order-status-pill">{order.status || "pending"}</span>
                     </div>
                     <div className="order-list-actions">

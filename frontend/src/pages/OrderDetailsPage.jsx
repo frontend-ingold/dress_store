@@ -54,7 +54,7 @@ function OrderDetailsPage() {
                 </p>
               </div>
               <div className="account-hero-badge small">
-                <strong>{currency.format(Number(order.totalAmount || 0))}</strong>
+                <strong>{currency.format(Number(order.grandTotal || order.totalAmount || 0))}</strong>
                 <span>{order.status || "pending"}</span>
               </div>
             </section>
@@ -99,8 +99,16 @@ function OrderDetailsPage() {
                       <strong>{order.status || "pending"}</strong>
                     </div>
                     <div>
-                      <span>Total price</span>
+                      <span>Subtotal</span>
                       <strong>{currency.format(Number(order.totalAmount || 0))}</strong>
+                    </div>
+                    <div>
+                      <span>Delivery fee</span>
+                      <strong>{currency.format(Number(order.deliveryFee || 0))}</strong>
+                    </div>
+                    <div>
+                      <span>Grand total</span>
+                      <strong>{currency.format(Number(order.grandTotal || order.totalAmount || 0))}</strong>
                     </div>
                   </div>
                 </article>
@@ -118,13 +126,32 @@ function OrderDetailsPage() {
                       <strong>{order.city || "Not provided"}</strong>
                     </div>
                     <div>
+                      <p className="section-subtitle">State</p>
+                      <strong>{order.state || "Not provided"}</strong>
+                    </div>
+                    <div>
                       <p className="section-subtitle">Postal code</p>
                       <strong>{order.postalCode || "Not provided"}</strong>
                     </div>
+                    <div>
+                      <p className="section-subtitle">Country</p>
+                      <strong>{order.country || "Not provided"}</strong>
+                    </div>
                   </div>
                   <div className="order-address-card">
-                    <p className="section-subtitle">Address line</p>
-                    <strong>{order.address || "No address provided"}</strong>
+                    <p className="section-subtitle">Delivery address</p>
+                    <strong>
+                      {[
+                        order.address,
+                        order.addressLine2,
+                        order.city,
+                        order.state,
+                        order.postalCode,
+                        order.country
+                      ]
+                        .filter(Boolean)
+                        .join(", ") || "No address provided"}
+                    </strong>
                   </div>
                 </article>
 
@@ -138,7 +165,10 @@ function OrderDetailsPage() {
 
                   <div className="order-products-list">
                     {order.items?.map((item) => (
-                      <article key={`${order.orderId}-${item.productId}`} className="order-product-row">
+                      <article
+                        key={`${order.orderId}-${item.productId}-${item.productVariantId || "base"}`}
+                        className="order-product-row"
+                      >
                         <a
                           href={`#/products/${encodeURIComponent(item.slug || item.productId)}`}
                           className="order-product-thumb"
@@ -147,6 +177,13 @@ function OrderDetailsPage() {
                         </a>
                         <div className="order-product-copy">
                           <h3>{item.name}</h3>
+                          {item.variantConfiguration ? (
+                            <p className="order-item-variant">
+                              {Object.entries(item.variantConfiguration)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join(" / ")}
+                            </p>
+                          ) : null}
                           <div className="order-item-meta">
                             <span>Quantity: {item.quantity}</span>
                             <span>Line total: {currency.format(Number(item.lineTotal || 0))}</span>

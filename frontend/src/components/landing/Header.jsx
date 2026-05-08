@@ -54,6 +54,7 @@ function Header({ navigationLinks, cartCount = 0 }) {
     session,
     currentUser,
     isAuthenticated,
+    isGuest,
     continueAsGuest,
     login,
     register,
@@ -258,17 +259,33 @@ function Header({ navigationLinks, cartCount = 0 }) {
                 >
                   Orders list page
                 </a>
-                <button
-                  type="button"
-                  className="header-account-action"
-                  onClick={() => {
-                    clearSession();
-                    setIsAccountMenuOpen(false);
-                    window.location.hash = "#/";
-                  }}
-                >
-                  Logout
-                </button>
+                {isGuest ? (
+                  <button
+                    type="button"
+                    className="header-account-action"
+                    onClick={() => {
+                      setIsAccountMenuOpen(false);
+                      setAuthError("");
+                      setAuthInfo("");
+                      setAuthMode("login");
+                      setIsAuthModalOpen(true);
+                    }}
+                  >
+                    Login
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="header-account-action"
+                    onClick={() => {
+                      clearSession();
+                      setIsAccountMenuOpen(false);
+                      window.location.hash = "#/";
+                    }}
+                  >
+                    Logout
+                  </button>
+                )}
               </div>
             ) : null}
           </div>

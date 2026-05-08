@@ -5,10 +5,95 @@ function parsePositiveInt(value, fallback) {
   return Number.isInteger(parsedValue) && parsedValue > 0 ? parsedValue : fallback;
 }
 
+function normalizeConfiguration(configuration) {
+  return configuration && typeof configuration === "object" ? configuration : {};
+}
+
+async function loadProductDetailsByParam(pathParam) {
+  const products = await query(
+    `SELECT
+       p.id,
+       p.slug,
+       p.name,
+       p.description,
+       p.category,
+       p.price,
+       p.special_price AS "specialPrice",
+       p.image_url AS "imageUrl",
+       COALESCE(vs.total_stock, p.stock)::int AS stock,
+       EXISTS (
+         SELECT 1
+         FROM product_variants pvx
+         WHERE pvx.product_id = p.id
+       ) AS "hasVariants"
+     FROM products p
+     LEFT JOIN (
+       SELECT product_id, SUM(stock)::int AS total_stock
+       FROM product_variants
+       GROUP BY product_id
+     ) vs
+       ON vs.product_id = p.id
+     WHERE p.is_active = TRUE
+       AND (p.slug = $1 OR CAST(p.id AS TEXT) = $1)
+     LIMIT 1`,
+    [pathParam]
+  );
+  const product = products[0];
+
+  if (!product) {
+    return null;
+  }
+
+  const images = await query(
+    `SELECT
+       id,
+       image_url AS "imageUrl",
+       sort_order AS "sortOrder"
+     FROM product_images
+     WHERE product_id = $1
+     ORDER BY sort_order ASC, id ASC`,
+    [product.id]
+  );
+
+  const variants = await query(
+    `SELECT
+       id,
+       sku,
+       configuration,
+       price,
+       special_price AS "specialPrice",
+       stock,
+       image_url AS "imageUrl",
+       is_default AS "isDefault"
+     FROM product_variants
+     WHERE product_id = $1
+     ORDER BY is_default DESC, id ASC`,
+    [product.id]
+  );
+
+  return {
+    ...product,
+    images: images.length
+      ? images
+      : [
+          {
+            id: `fallback-${product.id}`,
+            imageUrl: product.imageUrl,
+            sortOrder: 0
+          }
+        ],
+    variants: variants.map((variant) => ({
+      ...variant,
+      stock: Number(variant.stock || 0),
+      configuration: normalizeConfiguration(variant.configuration)
+    }))
+  };
+}
+
 export async function getProducts(request, response, next) {
   try {
     const params = [];
-    const whereClauses = [`is_active = TRUE`];
+    const whereClauses = [`p.is_active = TRUE`];
     const category = request.query.category?.trim?.();
     const searchQuery = request.query.q?.trim?.();
     const stockFilter = request.query.stock?.trim?.();
@@ -19,46 +104,52 @@ export async function getProducts(request, response, next) {
 
     if (category && category !== "All") {
       params.push(category);
-      whereClauses.push(`category = $${params.length}`);
+      whereClauses.push(`p.category = $${params.length}`);
     }
 
     if (searchQuery) {
       params.push(`%${searchQuery.toLowerCase()}%`);
       whereClauses.push(
-        `(LOWER(name) LIKE $${params.length}
-          OR LOWER(category) LIKE $${params.length}
-          OR LOWER(description) LIKE $${params.length})`
+        `(LOWER(p.name) LIKE $${params.length}
+          OR LOWER(p.category) LIKE $${params.length}
+          OR LOWER(p.description) LIKE $${params.length})`
       );
     }
 
     if (stockFilter === "in-stock") {
-      whereClauses.push(`stock > 0`);
+      whereClauses.push(`COALESCE(vs.total_stock, p.stock) > 0`);
     }
 
     if (priceFilter === "under-200") {
-      whereClauses.push(`COALESCE(special_price, price) < 200`);
+      whereClauses.push(`COALESCE(p.special_price, p.price) < 200`);
     } else if (priceFilter === "200-260") {
-      whereClauses.push(`COALESCE(special_price, price) BETWEEN 200 AND 260`);
+      whereClauses.push(`COALESCE(p.special_price, p.price) BETWEEN 200 AND 260`);
     } else if (priceFilter === "over-260") {
-      whereClauses.push(`COALESCE(special_price, price) > 260`);
+      whereClauses.push(`COALESCE(p.special_price, p.price) > 260`);
     }
 
-    let orderByClause = `created_at DESC`;
+    let orderByClause = `p.created_at DESC`;
 
     if (sortBy === "price-low") {
-      orderByClause = `COALESCE(special_price, price) ASC, created_at DESC`;
+      orderByClause = `COALESCE(p.special_price, p.price) ASC, p.created_at DESC`;
     } else if (sortBy === "price-high") {
-      orderByClause = `COALESCE(special_price, price) DESC, created_at DESC`;
+      orderByClause = `COALESCE(p.special_price, p.price) DESC, p.created_at DESC`;
     } else if (sortBy === "name-asc") {
-      orderByClause = `name ASC`;
+      orderByClause = `p.name ASC`;
     } else if (sortBy === "newest") {
-      orderByClause = `created_at DESC`;
+      orderByClause = `p.created_at DESC`;
     }
 
     const whereSql = whereClauses.join(" AND ");
     const totalCountResult = await query(
       `SELECT COUNT(*)::int AS "totalCount"
-       FROM products
+       FROM products p
+       LEFT JOIN (
+         SELECT product_id, SUM(stock)::int AS total_stock
+         FROM product_variants
+         GROUP BY product_id
+       ) vs
+         ON vs.product_id = p.id
        WHERE ${whereSql}`,
       params
     );
@@ -75,16 +166,27 @@ export async function getProducts(request, response, next) {
 
     const products = await query(
       `SELECT
-         id,
-         slug,
-         name,
-         description,
-         category,
-         price,
-         special_price AS "specialPrice",
-         image_url AS "imageUrl",
-         stock
-       FROM products
+         p.id,
+         p.slug,
+         p.name,
+         p.description,
+         p.category,
+         p.price,
+         p.special_price AS "specialPrice",
+         p.image_url AS "imageUrl",
+         COALESCE(vs.total_stock, p.stock)::int AS stock,
+         EXISTS (
+           SELECT 1
+           FROM product_variants pvx
+           WHERE pvx.product_id = p.id
+         ) AS "hasVariants"
+       FROM products p
+       LEFT JOIN (
+         SELECT product_id, SUM(stock)::int AS total_stock
+         FROM product_variants
+         GROUP BY product_id
+       ) vs
+         ON vs.product_id = p.id
        WHERE ${whereSql}
        ORDER BY ${orderByClause}${limitOffsetClause}`,
       dataParams
@@ -99,6 +201,28 @@ export async function getProducts(request, response, next) {
         totalPages: page ? Math.max(1, Math.ceil(totalCount / pageSize)) : 1
       }
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function getProductByPathParam(request, response, next) {
+  try {
+    const pathParam = request.params.pathParam?.trim?.();
+
+    if (!pathParam) {
+      response.status(400).json({ message: "A valid product identifier is required." });
+      return;
+    }
+
+    const product = await loadProductDetailsByParam(pathParam);
+
+    if (!product) {
+      response.status(404).json({ message: "Product not found." });
+      return;
+    }
+
+    response.json({ product });
   } catch (error) {
     next(error);
   }

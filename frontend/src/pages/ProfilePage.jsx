@@ -2,7 +2,7 @@ import Header from "../components/landing/Header";
 import Footer from "../components/landing/Footer";
 import { footerSections } from "../data/landingContent";
 import useFavorites from "../hooks/useFavorites";
-import useOrderHistory from "../hooks/useOrderHistory";
+import useOrders from "../hooks/useOrders";
 import useProfile from "../hooks/useProfile";
 import useShopSession from "../hooks/useShopSession";
 
@@ -16,7 +16,7 @@ const profileLinks = [
 function ProfilePage() {
   const { session, currentUser, isAuthenticated, isGuest } = useShopSession();
   const { favoriteCount } = useFavorites();
-  const { orders } = useOrderHistory();
+  const { orders } = useOrders();
   const { profile, isLoading: isProfileLoading, error: profileError } = useProfile(
     !isGuest ? currentUser?.id : null
   );

@@ -12,7 +12,7 @@ const router = Router();
 router.get("/:cartToken", getCart);
 router.post("/items", addCartItem);
 router.put("/items", updateCartItem);
-router.delete("/items/:productId", removeCartItem);
+router.delete("/items/:cartItemId", removeCartItem);
 router.post("/checkout", checkoutCart);
 
 export default router;

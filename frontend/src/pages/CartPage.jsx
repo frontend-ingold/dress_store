@@ -4,6 +4,7 @@ import Footer from "../components/landing/Footer";
 import { footerSections } from "../data/landingContent";
 import useCart from "../hooks/useCart";
 import useOrderHistory from "../hooks/useOrderHistory";
+import useShopSession from "../hooks/useShopSession";
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -18,13 +19,18 @@ const cartPageLinks = [
   { label: "Contact", href: "#contact" }
 ];
 
+const DELIVERY_FEE = 15;
+
 const initialForm = {
   customerName: "",
   email: "",
   phone: "",
   address: "",
+  addressLine2: "",
   city: "",
-  postalCode: ""
+  state: "",
+  postalCode: "",
+  country: ""
 };
 
 function EmptyCartIcon() {
@@ -47,13 +53,18 @@ function EmptyCartIcon() {
 function CartPage() {
   const { cart, isLoading, error, updateItem, removeItem, checkout } = useCart();
   const { addOrder } = useOrderHistory();
+  const { currentUser, isGuest } = useShopSession();
   const [form, setForm] = useState(initialForm);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [feedback, setFeedback] = useState("");
 
   const hasItems = cart.items.length > 0;
-  const totalLabel = useMemo(() => currency.format(Number(cart.subtotal || 0)), [cart.subtotal]);
+  const subtotal = Number(cart.subtotal || 0);
+  const grandTotal = useMemo(() => subtotal + DELIVERY_FEE, [subtotal]);
+  const totalLabel = useMemo(() => currency.format(subtotal), [subtotal]);
+  const deliveryFeeLabel = useMemo(() => currency.format(DELIVERY_FEE), []);
+  const grandTotalLabel = useMemo(() => currency.format(grandTotal), [grandTotal]);
 
   async function handleCheckout(event) {
     event.preventDefault();
@@ -62,17 +73,26 @@ function CartPage() {
       setIsSubmitting(true);
       setSubmitError("");
       const orderSnapshot = {
+        sessionMode: isGuest ? "guest" : "member",
+        sessionUserId: isGuest ? null : currentUser?.id || null,
         customerName: form.customerName,
         email: form.email,
         phone: form.phone,
         address: form.address,
+        addressLine2: form.addressLine2,
         city: form.city,
+        state: form.state,
         postalCode: form.postalCode,
+        country: form.country,
+        deliveryFee: result.deliveryFee,
+        grandTotal: result.grandTotal,
         items: cart.items.map((item) => ({
           productId: item.productId,
+          productVariantId: item.productVariantId,
           slug: item.slug,
           name: item.name,
           imageUrl: item.imageUrl,
+          variantConfiguration: item.variantConfiguration,
           quantity: item.quantity,
           lineTotal: item.lineTotal
         }))
@@ -82,12 +102,14 @@ function CartPage() {
         ...orderSnapshot,
         orderId: result.orderId,
         totalAmount: result.totalAmount,
+        deliveryFee: result.deliveryFee,
+        grandTotal: result.grandTotal,
         status: "pending"
       });
       setForm(initialForm);
       window.location.hash = `#/success?orderId=${encodeURIComponent(
         result.orderId
-      )}&total=${encodeURIComponent(result.totalAmount)}`;
+      )}&total=${encodeURIComponent(result.grandTotal || result.totalAmount)}`;
     } catch (requestError) {
       setSubmitError(requestError.message);
     } finally {
@@ -95,21 +117,21 @@ function CartPage() {
     }
   }
 
-  async function handleQuantityChange(productId, quantity) {
+  async function handleQuantityChange(cartItemId, quantity) {
     try {
       setFeedback("");
       setSubmitError("");
-      await updateItem(productId, quantity);
+      await updateItem(cartItemId, quantity);
     } catch (requestError) {
       setSubmitError(requestError.message);
     }
   }
 
-  async function handleRemove(productId) {
+  async function handleRemove(cartItemId) {
     try {
       setFeedback("");
       setSubmitError("");
-      await removeItem(productId);
+      await removeItem(cartItemId);
       setFeedback("Item removed from cart.");
     } catch (requestError) {
       setSubmitError(requestError.message);
@@ -161,7 +183,7 @@ function CartPage() {
           <section className="cart-layout">
             <div className="cart-items-panel">
               {cart.items.map((item) => (
-                <article key={item.productId} className="cart-item-card">
+                <article key={item.cartItemId} className="cart-item-card">
                   <a
                     href={`#/products/${encodeURIComponent(item.slug || item.productId)}`}
                     className="cart-item-image"
@@ -172,6 +194,13 @@ function CartPage() {
                   <div className="cart-item-copy">
                     <span className="cart-item-category">{item.category}</span>
                     <h3>{item.name}</h3>
+                    {item.variantConfiguration ? (
+                      <p className="cart-item-variant">
+                        {Object.entries(item.variantConfiguration)
+                          .map(([key, value]) => `${key}: ${value}`)
+                          .join(" / ")}
+                      </p>
+                    ) : null}
                     <div className="price-pair">
                       {item.specialPrice ? (
                         <span className="price-original">
@@ -193,7 +222,7 @@ function CartPage() {
                         max={item.stock}
                         value={item.quantity}
                         onChange={(event) =>
-                          handleQuantityChange(item.productId, Number(event.target.value))
+                          handleQuantityChange(item.cartItemId, Number(event.target.value))
                         }
                       />
                     </label>
@@ -205,7 +234,7 @@ function CartPage() {
                     <button
                       type="button"
                       className="cart-remove-button"
-                      onClick={() => handleRemove(item.productId)}
+                      onClick={() => handleRemove(item.cartItemId)}
                     >
                       Remove
                     </button>
@@ -223,11 +252,11 @@ function CartPage() {
                 </div>
                 <div className="checkout-summary-row">
                   <span>Delivery</span>
-                  <strong>Calculated at order</strong>
+                  <strong>{deliveryFeeLabel}</strong>
                 </div>
                 <div className="checkout-summary-row total">
                   <span>Total</span>
-                  <strong>{totalLabel}</strong>
+                  <strong>{grandTotalLabel}</strong>
                 </div>
               </div>
 
@@ -264,6 +293,14 @@ function CartPage() {
                     setForm((current) => ({ ...current, address: event.target.value }))
                   }
                 />
+                <input
+                  type="text"
+                  placeholder="Address line 2"
+                  value={form.addressLine2}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, addressLine2: event.target.value }))
+                  }
+                />
                 <div className="checkout-form-row">
                   <input
                     type="text"
@@ -275,10 +312,28 @@ function CartPage() {
                   />
                   <input
                     type="text"
+                    placeholder="State"
+                    value={form.state}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, state: event.target.value }))
+                    }
+                  />
+                </div>
+                <div className="checkout-form-row">
+                  <input
+                    type="text"
                     placeholder="Postal code"
                     value={form.postalCode}
                     onChange={(event) =>
                       setForm((current) => ({ ...current, postalCode: event.target.value }))
+                    }
+                  />
+                  <input
+                    type="text"
+                    placeholder="Country"
+                    value={form.country}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, country: event.target.value }))
                     }
                   />
                 </div>

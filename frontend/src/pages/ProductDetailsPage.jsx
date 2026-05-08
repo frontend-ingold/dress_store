@@ -6,6 +6,7 @@ import Footer from "../components/landing/Footer";
 import { footerSections } from "../data/landingContent";
 import useCart from "../hooks/useCart";
 import useFavorites from "../hooks/useFavorites";
+import useProductDetails from "../hooks/useProductDetails";
 import useProducts from "../hooks/useProducts";
 import useShopSession from "../hooks/useShopSession";
 
@@ -34,16 +35,44 @@ function getDiscountLabel(product) {
   return `${Math.round(((price - specialPrice) / price) * 100)}% Off`;
 }
 
-const productPageLinks = [
-  { label: "Home", href: "#/" },
-  { label: "Products", href: "#/products" },
-  { label: "New Arrivals", href: "#/products" },
-  { label: "Contact", href: "#contact" }
-];
-
 function getProductPathParamFromHash() {
   const match = window.location.hash.match(/^#\/products\/([^?]+)/);
   return match ? decodeURIComponent(match[1]) : "";
+}
+
+function getInitialOptionsFromVariant(variant) {
+  return variant?.configuration && typeof variant.configuration === "object"
+    ? { ...variant.configuration }
+    : {};
+}
+
+function getVariantOptionGroups(variants) {
+  const optionMap = new Map();
+
+  variants.forEach((variant) => {
+    Object.entries(variant.configuration || {}).forEach(([name, value]) => {
+      if (!optionMap.has(name)) {
+        optionMap.set(name, new Set());
+      }
+
+      optionMap.get(name).add(value);
+    });
+  });
+
+  return Array.from(optionMap.entries()).map(([name, values]) => ({
+    name,
+    values: Array.from(values)
+  }));
+}
+
+function findMatchingVariant(variants, selectedOptions) {
+  return (
+    variants.find((variant) =>
+      Object.entries(selectedOptions).every(
+        ([optionName, optionValue]) => variant.configuration?.[optionName] === optionValue
+      )
+    ) || null
+  );
 }
 
 function HeartIcon({ filled = false }) {
@@ -70,13 +99,23 @@ function ZoomIcon() {
   );
 }
 
+const productPageLinks = [
+  { label: "Home", href: "#/" },
+  { label: "Products", href: "#/products" },
+  { label: "New Arrivals", href: "#/products" },
+  { label: "Contact", href: "#contact" }
+];
+
 function ProductDetailsPage() {
-  const { products, isLoading, error } = useProducts();
+  const [productPathParam, setProductPathParam] = useState(getProductPathParamFromHash);
+  const { product, isLoading, error } = useProductDetails(productPathParam);
+  const { products } = useProducts();
   const { addItem, itemCount } = useCart();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { isAuthenticated, continueAsGuest, login, register, forgotPassword, resetPassword } =
     useShopSession();
-  const [productPathParam, setProductPathParam] = useState(getProductPathParamFromHash);
+  const [selectedOptions, setSelectedOptions] = useState({});
+  const [selectedImage, setSelectedImage] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [cartFeedback, setCartFeedback] = useState("");
   const [cartError, setCartError] = useState("");
@@ -89,14 +128,58 @@ function ProductDetailsPage() {
   const [pendingAction, setPendingAction] = useState(null);
   const [isZoomOpen, setIsZoomOpen] = useState(false);
 
-  const product = useMemo(
-    () =>
-      products.find(
-        (item) =>
-          item.slug === productPathParam || String(item.id) === String(productPathParam)
-      ),
-    [productPathParam, products]
+  const defaultVariant = useMemo(
+    () => product?.variants?.find((item) => item.isDefault) || product?.variants?.[0] || null,
+    [product]
   );
+
+  const selectedVariant = useMemo(() => {
+    if (!product?.variants?.length) {
+      return null;
+    }
+
+    return findMatchingVariant(product.variants, selectedOptions) || defaultVariant;
+  }, [defaultVariant, product, selectedOptions]);
+
+  const productGallery = useMemo(() => {
+    if (!product) {
+      return [];
+    }
+
+    const seen = new Set();
+    const galleryItems = [];
+
+    [...(product.images || []), selectedVariant?.imageUrl ? { imageUrl: selectedVariant.imageUrl } : null]
+      .filter(Boolean)
+      .forEach((item, index) => {
+        if (!item.imageUrl || seen.has(item.imageUrl)) {
+          return;
+        }
+
+        seen.add(item.imageUrl);
+        galleryItems.push({
+          id: item.id || `${product.id}-image-${index}`,
+          imageUrl: item.imageUrl
+        });
+      });
+
+    return galleryItems;
+  }, [product, selectedVariant]);
+
+  const optionGroups = useMemo(
+    () => getVariantOptionGroups(product?.variants || []),
+    [product]
+  );
+
+  const activeProduct = selectedVariant
+    ? {
+        ...product,
+        price: selectedVariant.price,
+        specialPrice: selectedVariant.specialPrice,
+        stock: selectedVariant.stock,
+        imageUrl: selectedVariant.imageUrl || selectedImage || product?.imageUrl
+      }
+    : product;
 
   const relatedProducts = useMemo(() => {
     if (!product) {
@@ -125,7 +208,17 @@ function ProductDetailsPage() {
     setQuantity(1);
     setCartFeedback("");
     setCartError("");
-  }, [product?.id]);
+    setSelectedOptions(getInitialOptionsFromVariant(defaultVariant));
+    setSelectedImage(defaultVariant?.imageUrl || product?.images?.[0]?.imageUrl || product?.imageUrl || "");
+  }, [defaultVariant, product?.id]);
+
+  useEffect(() => {
+    if (!selectedVariant?.imageUrl) {
+      return;
+    }
+
+    setSelectedImage(selectedVariant.imageUrl);
+  }, [selectedVariant?.id]);
 
   useEffect(() => {
     if (!cartFeedback) {
@@ -166,7 +259,7 @@ function ProductDetailsPage() {
         setIsAddingToCart(true);
       }
 
-      await addItem(product.id, quantity);
+      await addItem(product.id, quantity, selectedVariant?.id || null);
 
       if (redirectToCart) {
         window.location.hash = "#/cart";
@@ -246,6 +339,31 @@ function ProductDetailsPage() {
     }
   }
 
+  function handleOptionChange(optionName, optionValue) {
+    if (!product?.variants?.length) {
+      return;
+    }
+
+    setSelectedOptions((current) => {
+      const nextOptions = {
+        ...current,
+        [optionName]: optionValue
+      };
+      const exactMatch = findMatchingVariant(product.variants, nextOptions);
+
+      if (exactMatch) {
+        return nextOptions;
+      }
+
+      const fallbackVariant =
+        product.variants.find(
+          (variant) => variant.configuration?.[optionName] === optionValue
+        ) || defaultVariant;
+
+      return getInitialOptionsFromVariant(fallbackVariant);
+    });
+  }
+
   return (
     <>
       <Header navigationLinks={productPageLinks} cartCount={itemCount} />
@@ -267,7 +385,7 @@ function ProductDetailsPage() {
           </section>
         ) : null}
 
-        {product ? (
+        {product && activeProduct ? (
           <>
             <section className="product-detail-shell">
               <div className="product-detail-media">
@@ -278,18 +396,37 @@ function ProductDetailsPage() {
                     onClick={() => setIsZoomOpen(true)}
                     aria-label="Zoom product image"
                   >
-                    <img src={product.imageUrl} alt={product.name} />
+                    <img src={selectedImage || activeProduct.imageUrl} alt={product.name} />
                     <span className="product-image-zoom-chip">
                       <ZoomIcon />
                       Zoom
                     </span>
                   </button>
-                  {getDiscountLabel(product) ? (
+                  {getDiscountLabel(activeProduct) ? (
                     <span className="discount-ribbon product-detail-ribbon">
-                      {getDiscountLabel(product)}
+                      {getDiscountLabel(activeProduct)}
                     </span>
                   ) : null}
                 </div>
+
+                {productGallery.length > 1 ? (
+                  <div className="product-gallery-strip">
+                    {productGallery.map((image) => (
+                      <button
+                        key={image.id}
+                        type="button"
+                        className={
+                          image.imageUrl === selectedImage
+                            ? "product-gallery-thumb active"
+                            : "product-gallery-thumb"
+                        }
+                        onClick={() => setSelectedImage(image.imageUrl)}
+                      >
+                        <img src={image.imageUrl} alt={product.name} />
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
               </div>
 
               <div className="product-detail-copy">
@@ -308,13 +445,13 @@ function ProductDetailsPage() {
                   <span className="product-detail-category">{product.category}</span>
                   <div className="product-detail-meta-actions">
                     <div className="price-pair product-detail-price-pair">
-                      {product.specialPrice ? (
+                      {activeProduct.specialPrice ? (
                         <span className="price-original">
-                          {currency.format(Number(product.price))}
+                          {currency.format(Number(activeProduct.price))}
                         </span>
                       ) : null}
                       <strong className="price-current">
-                        {currency.format(getDisplayPrice(product))}
+                        {currency.format(getDisplayPrice(activeProduct))}
                       </strong>
                     </div>
                     <button
@@ -331,10 +468,40 @@ function ProductDetailsPage() {
 
                 <p className="product-detail-description">{product.description}</p>
 
+                {optionGroups.length ? (
+                  <div className="product-configurator">
+                    {optionGroups.map((group) => (
+                      <div key={group.name} className="product-config-group">
+                        <span className="product-config-label">{group.name}</span>
+                        <div className="product-config-values">
+                          {group.values.map((value) => (
+                            <button
+                              key={`${group.name}-${value}`}
+                              type="button"
+                              className={
+                                selectedOptions[group.name] === value
+                                  ? "product-config-value active"
+                                  : "product-config-value"
+                              }
+                              onClick={() => handleOptionChange(group.name, value)}
+                            >
+                              {value}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
                 <div className="product-detail-panels">
                   <div className="product-detail-panel">
                     <span>Availability</span>
-                    <strong>{Number(product.stock) > 0 ? `${product.stock} in stock` : "Out of stock"}</strong>
+                    <strong>
+                      {Number(activeProduct.stock) > 0
+                        ? `${activeProduct.stock} in stock`
+                        : "Out of stock"}
+                    </strong>
                   </div>
                   <div className="product-detail-panel">
                     <span>Delivery</span>
@@ -342,7 +509,11 @@ function ProductDetailsPage() {
                   </div>
                   <div className="product-detail-panel">
                     <span>Styling note</span>
-                    <strong>Editorial fit with premium drape</strong>
+                    <strong>
+                      {selectedVariant?.sku
+                        ? `Configured as ${Object.values(selectedVariant.configuration || {}).join(" / ")}`
+                        : "Editorial fit with premium drape"}
+                    </strong>
                   </div>
                 </div>
 
@@ -353,13 +524,13 @@ function ProductDetailsPage() {
                       <input
                         type="number"
                         min="1"
-                        max={product.stock}
+                        max={Math.max(1, Number(activeProduct.stock || 1))}
                         value={quantity}
                         onChange={(event) =>
                           setQuantity(
                             Math.max(
                               1,
-                              Math.min(product.stock, Number(event.target.value) || 1)
+                              Math.min(Number(activeProduct.stock || 1), Number(event.target.value) || 1)
                             )
                           )
                         }
@@ -370,7 +541,7 @@ function ProductDetailsPage() {
                     type="button"
                     className="catalog-banner-link primary"
                     onClick={() => requestProtectedAction("cart")}
-                    disabled={isAddingToCart || product.stock < 1}
+                    disabled={isAddingToCart || Number(activeProduct.stock) < 1}
                   >
                     {isAddingToCart ? "Adding..." : "Add to cart"}
                   </button>
@@ -378,7 +549,7 @@ function ProductDetailsPage() {
                     type="button"
                     className="catalog-banner-link secondary"
                     onClick={() => requestProtectedAction("buy")}
-                    disabled={isBuyingNow || product.stock < 1}
+                    disabled={isBuyingNow || Number(activeProduct.stock) < 1}
                   >
                     {isBuyingNow ? "Processing..." : "Buy now"}
                   </button>
@@ -479,7 +650,7 @@ function ProductDetailsPage() {
             Close
           </button>
           <div className="image-zoom-frame" onClick={(event) => event.stopPropagation()}>
-            <img src={product.imageUrl} alt={product.name} />
+            <img src={selectedImage || product.imageUrl} alt={product.name} />
           </div>
         </div>
       ) : null}
