@@ -1,0 +1,78 @@
+.section {
+  position: relative;
+  overflow: hidden;
+  margin: 18px 0 10px;
+  padding: 76px 0;
+}
+
+.background {
+  object-fit: cover;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(6, 18, 28, 0.82) 0%, rgba(7, 40, 58, 0.6) 50%, rgba(7, 40, 58, 0.46) 100%);
+}
+
+.inner {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 32px;
+  align-items: end;
+}
+
+.copy {
+  color: #fff;
+}
+
+.title {
+  margin: 0 0 18px;
+  font-size: clamp(2.4rem, 4vw, 4.6rem);
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+}
+
+.copy p {
+  max-width: 480px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.8;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.card {
+  color: #fff;
+}
+
+.thumb {
+  position: relative;
+  aspect-ratio: 1 / 1.2;
+  margin-bottom: 12px;
+  overflow: hidden;
+  border-radius: 22px;
+}
+
+.image {
+  object-fit: cover;
+}
+
+.card span {
+  font-weight: 600;
+}
+
+@media (max-width: 960px) {
+  .inner {
+    grid-template-columns: 1fr;
+  }
+
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}
