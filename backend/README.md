@@ -33,6 +33,13 @@ Copy `.env.example` to `.env` and set:
 - `npm run db:seed`
 - `npm run dev`
 
+## Vercel deployment
+
+- Set the Vercel project root directory to `backend`
+- Add `DATABASE_URL` in Vercel environment variables
+- The deployed base URL `/` returns a JSON status payload
+- API endpoints are available under `/api/...`
+
 ## API routes
 
 - `GET /api/health`
